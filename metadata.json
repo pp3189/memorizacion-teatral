@@ -1,0 +1,6 @@
+{
+  "name": "Memorizador de Personajes para Actores",
+  "description": "Una aplicación interactiva para que actores carguen, estudien y memoricen datos biográficos de personajes teatrales con autoevaluaciones escritas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
