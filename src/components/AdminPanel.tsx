@@ -48,6 +48,10 @@ export default function AdminPanel({
   const [customQText, setCustomQText] = useState<string>("");
   const [customQExpected, setCustomQExpected] = useState<string>("");
 
+  // Adaptar pregunta de otro personaje: guarda {id, questionText} de la pregunta seleccionada
+  const [adaptingQuestion, setAdaptingQuestion] = useState<{ id: string; questionText: string } | null>(null);
+  const [adaptingAnswer, setAdaptingAnswer] = useState<string>("");
+
   // Character Form Fields state
   const [nombreCompleto, setNombreCompleto] = useState("");
   const [fechaNacimiento, setFechaNacimiento] = useState("");
@@ -909,6 +913,115 @@ export default function AdminPanel({
                       </div>
                     )}
                   </div>
+
+                  {/* Reutilizar preguntas de otros personajes */}
+                  {characters.filter(c => c.id !== selectedCharId && (c.customQuestions?.length ?? 0) > 0).length > 0 && (
+                    <div className="bg-amber-50/60 p-6 rounded-2xl border border-amber-200 shadow-sm">
+                      <h4 className="font-serif text-base font-semibold text-stone-900 mb-1 flex items-center gap-2">
+                        <RotateCcw className="w-4 h-4 text-[#d97706]" />
+                        Reutilizar preguntas de otros personajes
+                      </h4>
+                      <p className="text-xs text-stone-500 font-light mb-4">
+                        Copia preguntas ya creadas para otros personajes y asígnalas a <span className="font-semibold italic">{activeCharForQuestions.nombreCompleto}</span>.
+                      </p>
+
+                      <div className="space-y-4">
+                        {characters
+                          .filter(c => c.id !== selectedCharId && (c.customQuestions?.length ?? 0) > 0)
+                          .map(otherChar => (
+                            <div key={otherChar.id}>
+                              <span className="text-[9px] font-mono uppercase tracking-widest text-[#d97706] block mb-2">
+                                De: {otherChar.nombreCompleto}
+                              </span>
+                              <div className="space-y-2">
+                                {otherChar.customQuestions.map(q => {
+                                  const alreadyAdded = activeCharForQuestions.customQuestions?.some(
+                                    existing => existing.questionText === q.questionText
+                                  );
+                                  return (
+                                    <div key={q.id} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+                                      <div className="p-3 flex items-center justify-between gap-4">
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-serif text-xs text-stone-900 font-semibold leading-snug truncate">
+                                            {q.questionText}
+                                          </p>
+                                          <p className="text-[10px] font-mono text-stone-400 mt-0.5">
+                                            R original: <span className="italic">"{q.expectedAnswer}"</span>
+                                          </p>
+                                        </div>
+                                      {alreadyAdded ? (
+                                        <span className="text-[10px] font-mono text-emerald-600 flex items-center gap-1 shrink-0">
+                                          <CheckCircle className="w-3.5 h-3.5" /> Agregada
+                                        </span>
+                                      ) : adaptingQuestion?.id === q.id ? null : (
+                                        <button
+                                          onClick={() => {
+                                            setAdaptingQuestion({ id: q.id, questionText: q.questionText });
+                                            setAdaptingAnswer("");
+                                          }}
+                                          className="shrink-0 py-1 px-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded text-[10px] font-mono uppercase font-semibold flex items-center gap-1 transition-all"
+                                        >
+                                          <Plus className="w-3 h-3 text-theatre-gold" />
+                                          Usar
+                                        </button>
+                                      )}
+                                      </div>
+
+                                      {/* Formulario inline para adaptar la respuesta */}
+                                      {adaptingQuestion?.id === q.id && (
+                                        <div className="px-3 pb-3 pt-0 border-t border-amber-100 bg-amber-50/60">
+                                          <p className="text-[10px] font-mono text-[#d97706] uppercase tracking-wider pt-2 mb-1.5">
+                                            Escribe la respuesta para {activeCharForQuestions.nombreCompleto}:
+                                          </p>
+                                          <div className="flex gap-2">
+                                            <input
+                                              autoFocus
+                                              type="text"
+                                              placeholder="Respuesta específica para este personaje..."
+                                              value={adaptingAnswer}
+                                              onChange={(e) => setAdaptingAnswer(e.target.value)}
+                                              className="flex-1 px-2.5 py-1.5 rounded border border-amber-200 text-xs bg-white outline-none focus:ring-1 focus:ring-amber-400"
+                                            />
+                                            <button
+                                              onClick={() => {
+                                                if (!adaptingAnswer.trim()) return;
+                                                const char = characters.find(c => c.id === selectedCharId);
+                                                if (!char) return;
+                                                onUpdateCharacter({
+                                                  ...char,
+                                                  customQuestions: [...(char.customQuestions || []), {
+                                                    id: `q-cust-${Date.now()}`,
+                                                    questionText: q.questionText,
+                                                    expectedAnswer: adaptingAnswer.trim(),
+                                                    associatedField: "datosAdicionales"
+                                                  }]
+                                                });
+                                                setAdaptingQuestion(null);
+                                                setAdaptingAnswer("");
+                                              }}
+                                              className="py-1.5 px-3 bg-theatre-maroon hover:bg-[#8f1e1e] text-white rounded text-[10px] font-mono uppercase font-semibold transition-all"
+                                            >
+                                              Guardar
+                                            </button>
+                                            <button
+                                              onClick={() => { setAdaptingQuestion(null); setAdaptingAnswer(""); }}
+                                              className="py-1.5 px-2 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded text-[10px] transition-all"
+                                            >
+                                              <X className="w-3.5 h-3.5" />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="bg-white p-8 text-center rounded-2xl border">

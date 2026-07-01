@@ -90,8 +90,8 @@ export default function QuizMode({
       }
     });
 
-    // Shuffle array cleanly
-    const shuffled = [...list].sort(() => Math.random() - 0.5);
+    // Shuffle and cap at 15 questions
+    const shuffled = [...list].sort(() => Math.random() - 0.5).slice(0, 15);
     setQuestions(shuffled);
   }, [character]);
 
